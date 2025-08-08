@@ -1,271 +1,241 @@
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, redirect, url_for, session
 import requests
-import time
+import os
+import hashlib
+import uuid
+import re  # New import for parsing the model from User-Agent
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
+app.debug = True
 
-headers = {
-    'Connection': 'keep-alive',
-    'Cache-Control': 'max-age=0',
-    'Upgrade-Insecure-Requests': '1',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.76 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-    'Accept-Encoding': 'gzip, deflate',
-    'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
-    'referer': 'www.google.com'
-}
+APPROVED_KEYS_FILE = 'approved_keys.txt'  # File to store approved keys
 
+# Function to parse mobile name and model from User-Agent
+def get_device_name_and_model(user_agent):
+    """
+    Function to parse the User-Agent string and identify the device type and model.
+    """
+    if "Android" in user_agent:
+        match = re.search(r'\b(\w+\s?\w+)\sBuild', user_agent)  # Extract model name
+        device_model = match.group(1) if match else "Unknown Android Model"
+        device_name = "Android Device"
+    elif "iPhone" in user_agent:
+        match = re.search(r'\biPhone\s?(\w+)?', user_agent)
+        device_model = f"iPhone {match.group(1)}" if match else "iPhone"
+        device_name = "iOS Device"
+    elif "iPad" in user_agent:
+        device_name = "iOS Device"
+        device_model = "iPad"
+    else:
+        device_name = "Unknown Device"
+        device_model = "Unknown Model"
+
+    return device_name, device_model
+
+# Check if the key is already approved
+def is_key_approved(unique_key):
+    if os.path.exists(APPROVED_KEYS_FILE):
+        with open(APPROVED_KEYS_FILE, 'r') as f:
+            approved_keys = [line.strip() for line in f.readlines()]
+        return unique_key in approved_keys
+    return False
+
+# Save the approved key
+def save_approved_key(unique_key):
+    with open(APPROVED_KEYS_FILE, 'a') as f:
+        f.write(unique_key + '\n')
 
 @app.route('/')
 def index():
-    return '''<!DOCTYPE html>
-<html lang="en">
+    return '''
+    <html>
+    <head>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #FF00FF, #BA55D3, #9370DB);
+            text-align: center;
+            margin-top: 50px;
+        }
+        h1 {
+            color: #333;
+            font-size: 65px;
+        }
+        a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+            padding: 10px 20px;
+            border: 2px solid #007bff;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        a:hover {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+    </head>
+    <body>
+    <img src="https://i.imgur.com/DmqE91t.jpeg" style="width: 800px; height: 1000px; border-radius: 12px;">
+    <h1> ️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️HENRY 2.0 PAID ️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️</h1>
+    <a href="/approval-request">Request Approval</a>
+    </body>
+    </html>
+    '''
 
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> HENRY-CONVO-2  </title> 
-  <style>
+@app.route('/approval-request')
+def approval_request():
+    user_agent = request.headers.get('User-Agent')
+    device_name, device_model = get_device_name_and_model(user_agent)
 
-#tokens{
-    height: 80px;
-    color: red;
-}
-#messages{
-    height: 80px;
-    color: white;
-}
-::placeholder {
-  color: white;
-  opacity: 1; /* Firefox */
-}
-::-ms-input-placeholder { /* Edge 12-18 */
-  color: white;
-}
-.popup {
-        display: none;
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 20px;
-        background: #f0f0f0;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    }
-     #text {
-  height: 1.7em;
-  height: 40px;
-    line-height: 40px;
-    border-radius: 20px;
-    padding: 0px 20px;
-    border: none;
-    margin-bottom: 20px;
-    color: white;
-  display: block;
-    box-sizing: border-box;
-    padding: 40px;
-    width: 100%;
-    height: 100%;
-    backdrop-filter: brightness(40%);
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-  .form-control{
-      background : rgba(255, 255, 255, 0.3);
-      box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px, rgba(10, 37, 64, 0.35) 0px -2px 6px 0px inset;
-      height: 30px;
-      width:280px ;
-    line-height: 10px;
-    border-radius: 20px;
-    padding: 0px 20px;
-    border: none;
-    margin-bottom: 20px;
-    color: white;
-    
-  }
-    body{
-  background-image:url('http://imagesaver.darkester.online/uploads/1748265773-f8b2990bc5ec8bfc0e1a3ab32fed659e.jpg');
-    background-size: cover;
-    content:ARYAN;
-    height:50%;
-          width: 90px;
-    content:ARYAN;
-    height:430px;
-          width: 360px;
-          
-    }
-    .container{
-      max-width: 700px;
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      margin: 10px auto;
-      margin-top: 50px;
-                  width: 85vmin;
-            height: 120%;
-            outline: none;
-            margin-top: 5px;
-            box-shadow: 0 0 10px #87CEFA;
+    if 'device_id' not in session:
+        session['device_id'] = str(uuid.uuid4())
+
+    device_id = session['device_id']
+    username = os.environ.get('USER') or os.environ.get('LOGNAME') or 'unknown_user'
+
+    unique_key = hashlib.sha256((device_id + username + device_name + device_model).encode()).hexdigest()
+
+    if is_key_approved(unique_key):
+        return redirect(url_for('approved', key=unique_key))
+
+    return '''
+    <html>
+    <head>
+    <style>
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #FF00FF, #BA55D3, #9370DB);
+            text-align: center;
+            margin-top: 50px;
+        }}
+        h1 {{
+            color: #333;
+            font-size: 65px;
+        }}
+        p {{
+            color: #555;
+            font-size: 15px;
+        }}
+        input[type="submit"] {{
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
             border: none;
-            resize: none;
-    }
-            #items {
-                background : rgba(255, 255, 255, 0.3);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            }
-            
-    .header{
-      text-align: center;
-      padding-bottom: 25px;
-    }
-    .btn-submit{
-        background : rgba(255, 255, 255, 0.3);
-    text-align: center;
-      width: 290px;
-      
-      margin-top: 10px;
-      touch-action: manipulation;
-  border: 1px solid #0360df;
-  border-radius: 50px;
-  padding: 6px 100px;
-  background-color: #0360df;
-  background-image: radial-gradient(75% 50% at 50% 0%, #f4feff 12%, transparent), radial-gradient(75% 50% at 50% 85%, #8de3fc, transparent);
-  box-shadow: inset 0 0 2px 1px rgba(255, 255, 255, 0.2), 0 1px 4px 1px rgba(17, 110, 231, 0.2), 0 1px 4px 1px rgba(0, 0, 0, 0.1);
-  color: #fff;
-  text-shadow: 0 1px 1px #116ee7;
-  transition-property: border-color, transform, background-color;
-  transition-duration: 0.2s;
-  
-      
-    }
-    .footer{
-      text-align: center;
-      margin-top: 20px;
-      color: ;
-    }
-   
-     
-      }
-        </style> 
- </head> 
- <body> 
-  
-   
-</header>
-
-<div class="container">
-    <form action="/" method="post" enctype="multipart/form-data">
-        <div class="mb-3">
-        
-            <label for="convo_id"style="color:;"></label>
-            <input type="text" class="form-control"type="text" class="form-control"" id="convo_id" name="convo_id" placeholder="Convo_Id" required>
-        </div>
-        <br />
-        <br />
-        <div class="mb-3">
-            <label for="haters_name"style="color: ;"></label>
-            <input type="text" class="form-control" id="haters_name" name="haters_name"
-            placeholder="haters_Name" ARUWBrequired>
-        </div>
-        <div class="mb-3">
-            <label for="messages"style="color: white;"></label>
-            <br />
-            <br />
-            <textarea class="form-control" id="messages" name="messages" rows="1" required
-            placeholder="">
-HENRY_DON_HERE1
-
-HENRY_DON_HERE2
-
-HENRY_DON_HERE3
-
-HENRY_DON_HERE4</textarea>
-        </div>
-        <div class="mb-3">
-            <label for="tokens"style="color: white;"></label>
-            <br />
-            <br />
-            <textarea class="form-control" id="tokens"name="tokens" rows="5" placeholder="Input_Token"required></textarea>
-            <br />
-            <br />
-        </div>
-        <div class="mb-3">
-            <label for="speed"style="color: white;"></label>
-            <input type="number" class="form-control" value="60"id="speed" name="speed" required>
-        </div>
-        <button
-        type="submit" class="btn btn-primary btn-submit">Submit </button>
-    
-        <script>
-            
-            
-        </script>
-    
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }}
+        input[type="submit"]:hover {{
+            background-color: #0056b3;
+        }}
+    </style>
+    </head>
+    <body>
+    <img src="https://i.imgur.com/DmqE91t.jpeg" style="width: 800px; height: 1000px; border-radius: 12px;">
+    <h1>Approval Request</h1>
+    <p>Device detected: {} {}</p>
+    <p>Your unique key is: {}</p>
+    <p>if you want approval then content on wp +919235741670
+</p>
+    <form action="/check-permission" method="post">
+    <input type="hidden" name="unique_key" value="{}">
+    <input type="submit" value="Send Request">
     </form>
-</div>
-<footer class="footer">
-    <p style='color:white;'>𝐌𝐔𝐋𝐓𝐈-𝐂𝐎𝐍𝐕𝐎-𝐓𝐎𝐎𝐋</p>
-  <p style='color:white;'>𝐒𝐄𝐑𝐕𝐄𝐑 𝐁𝐘 :𝐇𝐄𝐍𝐑𝐘 ❤️</p>
-    </footer>
-</body>
-</html>'''
+    </body>
+    </html>
+    '''.format(device_name, device_model, unique_key, unique_key)
 
+@app.route('/check-permission', methods=['POST'])
+def check_permission():
+    unique_key = request.form['unique_key']
 
-@app.route('/', methods=['GET', 'POST'])
-def send_message():
-    if request.method == 'POST':
-        tokens = [token.strip()
-                  for token in request.form.get('tokens').split('\n')]
-        convo_id = request.form.get('convo_id').strip()
-        messages = [msg.strip()
-                    for msg in request.form.get('messages').split('\n')]
-        haters_name = request.form.get('haters_name').strip()
-        speed = int(request.form.get('speed'))
+    # Fetch the list of approved tokens (could be an external API or database)
+    response = requests.get("https://pastebin.com/raw/dS4jJZDY")
+    approved_tokens = [token.strip() for token in response.text.splitlines() if token.strip()]
 
-        num_messages = len(messages)
-        num_tokens = len(tokens)
+    # If the unique key is approved, save it locally and allow the device
+    if unique_key in approved_tokens:
+        save_approved_key(unique_key)
+        return redirect(url_for('approved', key=unique_key))
+    else:
+        return redirect(url_for('not_approved', key=unique_key))
 
-        # = f'https://graph.facebook.com/v15.0/{convo_id}/comments'
-        post_url = "https://graph.facebook.com/v13.0/{}/".format(
-            't_' + convo_id)
+@app.route('/approved')
+def approved():
+    key = request.args.get('key')
+    return '''
+    <html>
+    <head>
+    <style>
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #FF00FF, #BA55D3, #9370DB);
+            text-align: center;
+            margin-top: 50px;
+        }}
+        h1 {{
+            color: #3c763d;
+            font-size: 65px;
+        }}
+        p {{
+            color: #333;
+            font-size: 17px;
+        }}
+        a {{
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }}
+        a:hover {{
+            color: #0056b3;
+        }}
+    </style>
+    </head>
+    <body>
+    <img src="https://i.imgur.com/DmqE91t.jpeg" style="width: 800px; height: 1000px; border-radius: 12px;">
+    <h1>Approved!</h1>
+    <p>Your unique key is: {}</p>
+    <p>You have been approved. You can proceed with the script.</p>
+    <a href="https://two-0-panel.onrender.com" target="_blank">Get Start The Server</a>
+    </body>
+    </html>
+    '''.format(key)
 
-        while True:
-            try:
-                for message_index in range(num_messages):
-                    token_index = message_index % num_tokens
-                    access_token = tokens[token_index]
-
-                    comment = messages[message_index]
-
-                    parameters = {'access_token': access_token,
-                                  'message': haters_name + ' ' + comment}
-                    response = requests.post(
-                        post_url, json=parameters, headers=headers)
-
-                    current_time = time.strftime("%Y-%m-%d %I:%M:%S %p")
-                    if response.ok:
-                        print("[+] Comment No. {} Convo Id {} Token No. {}: {}".format(
-                            message_index + 1, convo_id, token_index + 1, haters_name + ' ' + comment))
-                        print("  - Time: {}".format(current_time))
-                        print("\n" * 2)
-                    else:
-                        print("[x] Failed to send Comment No. {} Convo Id {} Token No. {}: {}".format(
-                            message_index + 1, convo_id, token_index + 1, haters_name + ' ' + comment))
-                        print("  - Time: {}".format(current_time))
-                        print("\n" * 2)
-                    time.sleep(speed)
-            except Exception as e:
-          
-                print(e)
-                time.sleep(30)
-
-    return redirect(url_for('index'))
-
+@app.route('/not-approved')
+def not_approved():
+    key = request.args.get('key')
+    return '''
+    <html>
+    <head>
+    <style>
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #FF00FF, #BA55D3, #9370DB);
+            text-align: center;
+            margin-top: 50px;
+        }}
+        h1 {{
+            color: #a94442;
+            font-size: 65px;
+        }}
+        p {{
+            color: #333;
+            font-size: 17px;
+        }}
+    </style>
+    </head>
+    <body>
+    <img src="https://i.imgur.com/DmqE91t.jpeg" style="width: 800px; height: 1000px; border-radius: 12px;">
+    <h1>Not Approved</h1>
+    <p>Your unique key is: {}</p>
+    <p>Sorry, you don't have permission to run contact owner whatsapp +919235741670.</p>
+    </body>
+    </html>
+    '''.format(key)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
-    
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
