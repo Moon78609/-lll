@@ -6,7 +6,7 @@ import uuid
 import re  # New import for parsing the model from User-Agent
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = os.urandom(15)
 app.debug = True
 
 APPROVED_KEYS_FILE = 'approved_keys.txt'  # File to store approved keys
@@ -79,7 +79,7 @@ def index():
     </head>
     <body>
     <img src="https://i.imgur.com/DmqE91t.jpeg" style="width: 800px; height: 1000px; border-radius: 12px;">
-    <h1> ️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️TITAN 2.0 PAID ️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️</h1>
+    <h1> ️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️HENRY 2.0 PAID ️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️</h1>
     <a href="/approval-request">Request Approval</a>
     </body>
     </html>
@@ -199,7 +199,7 @@ def approved():
     <h1>Approved!</h1>
     <p>Your unique key is: {}</p>
     <p>You have been approved. You can proceed with the script.</p>
-    <a href="https://shared-marys-yuvixhenrybrand-879ee98e.koyeb.app/" target="_blank">Get Start The Server</a>
+    <a href="https://evil-fay-zohan-21e195f3.koyeb.app/" target="_blank">Get Start The Server</a>
     </body>
     </html>
     '''.format(key)
