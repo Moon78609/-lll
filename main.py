@@ -199,7 +199,7 @@ def approved():
     <h1>Approved!</h1>
     <p>Your unique key is: {}</p>
     <p>You have been approved. You can proceed with the script.</p>
-    <a href="https://evil-fay-zohan-21e195f3.koyeb.app/" target="_blank">Get Start The Server</a>
+    <a href="https://raw-hynda-henrykinghere-2a31b87f.koyeb.app/" target="_blank">Get Start The Server</a>
     </body>
     </html>
     '''.format(key)
