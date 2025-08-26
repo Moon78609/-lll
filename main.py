@@ -107,7 +107,7 @@ def approval_request():
     <style>
         body {{
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(to right, #FF00FF, #BA55D3, #9370DB);
+            background-color: black;
             text-align: center;
             margin-top: 50px;
         }}
@@ -172,7 +172,7 @@ def approved():
     <style>
         body {{
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(to right, #FF00FF, #BA55D3, #9370DB);
+            background-color: black;
             text-align: center;
             margin-top: 50px;
         }}
@@ -213,7 +213,7 @@ def not_approved():
     <style>
         body {{
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(to right, #FF00FF, #BA55D3, #9370DB);
+            background-color: black;
             text-align: center;
             margin-top: 50px;
         }}
