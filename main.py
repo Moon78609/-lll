@@ -59,7 +59,7 @@ def index():
             margin-top: 50px;
         }
         h1 {
-            color: #333;
+            color: #FAF8F7;
             font-size: 65px;
         }
         a {
@@ -112,11 +112,11 @@ def approval_request():
             margin-top: 50px;
         }}
         h1 {{
-            color: #333;
+            color: #FAF8F7;
             font-size: 65px;
         }}
         p {{
-            color: #555;
+            color: #FAF8F7;
             font-size: 15px;
         }}
         input[type="submit"] {{
@@ -181,7 +181,7 @@ def approved():
             font-size: 65px;
         }}
         p {{
-            color: #333;
+            color: #FAF8F7;
             font-size: 17px;
         }}
         a {{
@@ -222,7 +222,7 @@ def not_approved():
             font-size: 65px;
         }}
         p {{
-            color: #333;
+            color: #FAF8F7;
             font-size: 17px;
         }}
     </style>
